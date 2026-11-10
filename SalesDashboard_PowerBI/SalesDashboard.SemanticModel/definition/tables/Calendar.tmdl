@@ -1,0 +1,73 @@
+table Calendar
+	lineageTag: e41686cd-6616-4227-9737-14726c167229
+	dataCategory: Time
+
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: dd mmm yyyy
+		lineageTag: de0279e1-7f9a-4098-8df0-5f2595f19a51
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: cd73de00-81a0-4a05-ace9-da661dcf884c
+		summarizeBy: none
+		sourceColumn: Year
+
+	column MonthNum
+		dataType: int64
+		formatString: 0
+		lineageTag: e01c683e-99a4-4df0-9de3-a361c0099eba
+		summarizeBy: none
+		sourceColumn: MonthNum
+
+	column Month
+		dataType: string
+		lineageTag: 864fa3f3-eab0-4e9b-a5ed-0de47db4304d
+		summarizeBy: none
+		sourceColumn: Month
+		sortByColumn: MonthNum
+
+	column YearMonthNum
+		dataType: int64
+		formatString: 0
+		lineageTag: 90624fe3-6b82-46c9-982f-b0f1423674a6
+		summarizeBy: none
+		sourceColumn: YearMonthNum
+
+	column 'Month Year'
+		dataType: string
+		lineageTag: 8350a73f-7aac-419f-bb75-9e0fed1d9d16
+		summarizeBy: none
+		sourceColumn: Month Year
+		sortByColumn: YearMonthNum
+
+	column Quarter
+		dataType: string
+		lineageTag: 93550840-067f-4cfc-8e1f-d3d9849acfb5
+		summarizeBy: none
+		sourceColumn: Quarter
+
+	partition Calendar = m
+		mode: import
+		source =
+				let
+				    Dates = List.Dates(#date(2024, 1, 1), Duration.Days(#date(2026, 12, 31) - #date(2024, 1, 1)) + 1, #duration(1, 0, 0, 0)),
+				    T = Table.FromList(Dates, Splitter.SplitByNothing(), {"Date"}, null, ExtraValues.Error),
+				    D = Table.TransformColumnTypes(T, {{"Date", type date}}),
+				    Y = Table.AddColumn(D, "Year", each Date.Year([Date]), Int64.Type),
+				    MN = Table.AddColumn(Y, "MonthNum", each Date.Month([Date]), Int64.Type),
+				    MO = Table.AddColumn(MN, "Month", each Date.ToText([Date], "MMM", "en-US"), type text),
+				    YM = Table.AddColumn(MO, "YearMonthNum", each Date.Year([Date]) * 100 + Date.Month([Date]), Int64.Type),
+				    MY = Table.AddColumn(YM, "Month Year", each Date.ToText([Date], "MMM yyyy", "en-US"), type text),
+				    Q = Table.AddColumn(MY, "Quarter", each "Q" & Text.From(Date.QuarterOfYear([Date])), type text)
+				in
+				    Q
+
+	annotation PBI_ResultType = Table
+

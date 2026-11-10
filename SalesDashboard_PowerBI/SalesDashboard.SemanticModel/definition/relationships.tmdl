@@ -1,0 +1,4 @@
+relationship f3f49249-dc28-4f90-a5ae-c7978306d03b
+	fromColumn: Sales.OrderDate
+	toColumn: Calendar.Date
+
